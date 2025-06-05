@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -15,8 +14,11 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends State<MainNavigationScreen> 
+    with TickerProviderStateMixin {
   int _currentIndex = 1; // Start with dashboard (middle tab)
+  late AnimationController _indicatorController;
+  late Animation<double> _indicatorAnimation;
 
   // List of screens for each tab
   final List<Widget> _screens = [
@@ -25,10 +27,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     const ProfileScreen(),
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _indicatorController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _indicatorAnimation = Tween<double>(
+      begin: _currentIndex.toDouble(),
+      end: _currentIndex.toDouble(),
+    ).animate(CurvedAnimation(
+      parent: _indicatorController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _indicatorController.dispose();
+    super.dispose();
+  }
+
   void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    if (index != _currentIndex) {
+      setState(() {
+        _indicatorAnimation = Tween<double>(
+          begin: _currentIndex.toDouble(),
+          end: index.toDouble(),
+        ).animate(CurvedAnimation(
+          parent: _indicatorController,
+          curve: Curves.easeInOut,
+        ));
+        _currentIndex = index;
+      });
+      _indicatorController.forward(from: 0);
+    }
   }
 
   bool _shouldShowFloatingActionButton() {
@@ -44,81 +78,78 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: _currentIndex,
-        onTap: _onItemTapped,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textLight,
-        backgroundColor: AppColors.cardBackground,
-        elevation: 8,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        items: [
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'icons/chatunfill.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.textLight,
-                BlendMode.srcIn,
-              ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: AppColors.background,
+          border: Border(
+            top: BorderSide(
+              color: Colors.grey,
+              width: 0.5,
             ),
-            activeIcon: SvgPicture.asset(
-              'icons/chatfill.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.primary,
-                BlendMode.srcIn,
-              ),
-            ),
-            label: '',
           ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'icons/dashunfill.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.textLight,
-                BlendMode.srcIn,
+        ),
+        child: Container(
+          height: 50 + MediaQuery.of(context).padding.bottom,
+          padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+          child: Column(
+            children: [
+              // Indicator section with animated sliding line
+              Container(
+                height: 2, // Made thinner (was 3)
+                child: Stack(
+                  children: [
+                    // Background line
+                    Container(
+                      width: double.infinity,
+                      height: 2,
+                      color: Colors.grey.shade300,
+                    ),
+                    // Animated indicator line
+                    AnimatedBuilder(
+                      animation: _indicatorAnimation,
+                      builder: (context, child) {
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        final tabWidth = screenWidth / 3;
+                        final position = _indicatorAnimation.value * tabWidth;
+                        
+                        return Positioned(
+                          left: position,
+                          child: Container(
+                            width: tabWidth,
+                            height: 2,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            activeIcon: SvgPicture.asset(
-              'icons/dashfill.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.primary,
-                BlendMode.srcIn,
+              // Icon section
+              Expanded(
+                child: Row(
+                  children: [
+                    _buildNavBarItem(
+                      index: 0,
+                      unfilledIcon: 'icons/chatunfill.svg',
+                      filledIcon: 'icons/chatfill.svg',
+                    ),
+                    _buildNavBarItem(
+                      index: 1,
+                      unfilledIcon: 'icons/dashunfill.svg',
+                      filledIcon: 'icons/dashfill.svg',
+                    ),
+                    _buildNavBarItem(
+                      index: 2,
+                      unfilledIcon: 'icons/profileunfill.svg',
+                      filledIcon: 'icons/profilefill.svg',
+                    ),
+                  ],
+                ),
               ),
-            ),
-            label: '',
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              'icons/profileunfill.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.textLight,
-                BlendMode.srcIn,
-              ),
-            ),
-            activeIcon: SvgPicture.asset(
-              'icons/profilefill.svg',
-              width: 24,
-              height: 24,
-              colorFilter: ColorFilter.mode(
-                AppColors.primary,
-                BlendMode.srcIn,
-              ),
-            ),
-            label: '',
-          ),
-        ],
+        ),
       ),
       floatingActionButton: _shouldShowFloatingActionButton() ? FloatingActionButton.extended(
         onPressed: () {
@@ -129,6 +160,33 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         icon: const Icon(Icons.camera_alt),
         label: const Text('Start Scan'),
       ) : null,
+    );
+  }
+
+  Widget _buildNavBarItem({
+    required int index,
+    required String unfilledIcon,
+    required String filledIcon,
+  }) {
+    final isActive = _currentIndex == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onItemTapped(index),
+        child: Container(
+          height: 48, // Fixed height instead of 60
+          child: Center(
+            child: SvgPicture.asset(
+              isActive ? filledIcon : unfilledIcon,
+              width: 24,
+              height: 24,
+              colorFilter: ColorFilter.mode(
+                isActive ? AppColors.primary : AppColors.textLight,
+                BlendMode.srcIn,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

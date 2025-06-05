@@ -5,9 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/main/main_navigation_screen.dart';
-import '../screens/main/dashboard_screen.dart';
-import '../screens/main/chat_screen.dart';
-import '../screens/main/profile_screen.dart';
+import '../screens/main/metric_progress_screen.dart';
 import '../screens/scan/camera_capture_screen.dart';
 import '../screens/scan/front_capture_screen.dart';
 import '../screens/scan/right_profile_capture_screen.dart';
@@ -18,7 +16,16 @@ import '../screens/scan/results_intro_screen.dart';
 import '../screens/scan/measurement_detail_screen.dart';
 import '../screens/scan/results_summary_screen.dart';
 import '../screens/scan/improvement_plan_screen.dart';
+import '../screens/scan/developer_test_screen.dart';
 import '../providers/auth_provider.dart';
+
+// Define a simple class to hold parameters for MetricProgressScreen
+class MetricProgressScreenParams {
+  final String metricId;
+  final String metricName;
+
+  MetricProgressScreenParams({required this.metricId, required this.metricName});
+}
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
@@ -63,6 +70,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/main',
         builder: (context, state) => const MainNavigationScreen(),
+        routes: [
+          GoRoute(
+            path: 'metric-progress',
+            builder: (context, state) {
+              final params = state.extra as MetricProgressScreenParams?;
+              if (params != null) {
+                return MetricProgressScreen(
+                  metricId: params.metricId,
+                  metricName: params.metricName,
+                );
+              }              
+              return const Scaffold(body: Center(child: Text('Error: Missing metric parameters')));
+            },
+          ),
+        ]
       ),
       
       // Legacy routes for backward compatibility
@@ -119,6 +141,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'improvement-plan',
             builder: (context, state) => const ImprovementPlanScreen(),
+          ),
+          GoRoute(
+            path: 'developer-test',
+            builder: (context, state) => const DeveloperTestScreen(),
           ),
         ],
       ),

@@ -32,7 +32,7 @@ class CameraCaptureScreen extends StatelessWidget {
               decoration: AppDecorations.cardDecoration,
               child: Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.camera_enhance,
                     size: 64,
                     color: AppColors.primary,
@@ -99,7 +99,7 @@ class CameraCaptureScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.lightbulb_outline,
                         color: AppColors.primary,
                       ),
@@ -128,6 +128,19 @@ class CameraCaptureScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () => context.push('/scan/front'),
               child: const Text('Start Front Photo'),
+            ),
+            
+            const SizedBox(height: AppSpacing.md),
+            
+            // Developer Test Button
+            OutlinedButton.icon(
+              onPressed: () => context.push('/scan/developer-test'),
+              icon: const Icon(Icons.code),
+              label: const Text('Developer Test Mode'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+                side: BorderSide(color: Colors.grey[400]!),
+              ),
             ),
           ],
         ),
